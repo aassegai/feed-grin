@@ -4,7 +4,7 @@ An extension that hides user posts in the LinkedIn feed.
 
 ## Installation
 
-1. Extract `feed-grin-1.0.2.zip` to a permanent folder.
+1. Extract `feed-grin-1.0.2.zip` to a permanent folder or just clone the repo locally if using github.
 2. Open `chrome://extensions` in Chrome.
 3. Enable "Developer mode".
 4. Click "Load unpacked" and select the `extension` folder
