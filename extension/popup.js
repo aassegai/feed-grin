@@ -25,7 +25,7 @@ async function refreshStatus() {
 }
 function render(values) {
   enabled.checked = values.enabled !== false;
-  hideAds.checked = values.hideAds === true;
+  hideAds.checked = values.hideAds !== false;
   showTrollface.checked = values.showTrollface !== false;
   enabled.disabled = false;
   hideAds.disabled = false;
@@ -33,7 +33,7 @@ function render(values) {
   refreshStatus();
 }
 async function load() {
-  try { render(await chrome.storage.local.get({ enabled: true, hideAds: false, showTrollface: true })); }
+  try { render(await chrome.storage.local.get({ enabled: true, hideAds: true, showTrollface: true })); }
   catch { status.textContent = "Не удалось загрузить настройки. Откройте окно ещё раз."; }
 }
 async function save() {

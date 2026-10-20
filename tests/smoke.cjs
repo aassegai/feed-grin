@@ -33,10 +33,11 @@ ${card('body-mentions-ad','1 day ago •','My post talks about Promoted and Spon
 </main><aside class="scaffold-layout__aside">Recommendations and sidebar advertisement</aside></div>
 <div id="message-dock"><button>Open messages</button></div></body></html>`;
 
-async function hiddenFeed(page, image=true) {
+async function hiddenFeed(page, image=true, adsHidden=false) {
   await page.waitForFunction(() => getComputedStyle(document.getElementById('organic').parentElement).display === 'none');
   for (const id of ['organic','organic-ru','body-mentions-ad']) assert.equal(await page.locator(`#${id}`).isVisible(),false,id);
-  for (const id of ['ad','ad-ru','ad-marker','unknown']) assert.equal(await page.locator(`#${id}`).isVisible(),true,id);
+  for (const id of ['ad','ad-ru','ad-marker']) assert.equal(await page.locator(`#${id}`).isVisible(),!adsHidden,id);
+  assert.equal(await page.locator('#unknown').isVisible(),true);
   for (const selector of ['nav','.composer','.scaffold-layout__aside','#message-dock']) assert.equal(await page.locator(selector).isVisible(),true,selector);
   if (image) {
     await page.waitForFunction(() => {
@@ -78,23 +79,25 @@ async function original(page) {
     for (const id of ['modern-tracking-organic','modern-ru','modern-split-time','modern-sr-time','modern-roleless']) {
       assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
     }
-    for (const id of ['modern-ad','modern-ad-ru','modern-metadata-ad','modern-tracking-ad','modern-unknown','modern-sidebar']) {
-      assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
+    for (const id of ['modern-ad','modern-ad-ru','modern-metadata-ad','modern-tracking-ad']) {
+      assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
     }
+    for (const id of ['modern-unknown','modern-sidebar']) assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
     assert.equal(await page.locator('.composer').isVisible(), true);
     assert.equal(await page.locator(host).count(), 1);
-    pass('modern ad labels, sponsored tracking, component keys and unknown modules preserved');
+    pass('modern ads hidden by default; unknown modules and sidebars preserved');
     pass('modern split, invisible and screen-reader timestamps recognized; roleless cards covered');
     await page.goto('https://www.linkedin.com/feed/?trk=test');
-    await hiddenFeed(page);
-    pass('default: organic posts hidden; ads, unknown cards, composer and sidebars preserved; image on by default');
+    await hiddenFeed(page,true,true);
+    pass('default: organic posts and ads hidden; unknown cards, composer and sidebars preserved; image on');
 
     const popup=await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
     await popup.locator('#enabled').waitFor({state:'visible'});
     await popup.waitForFunction(()=>!document.querySelector('#enabled').disabled);
-    assert.equal(await popup.locator('#hideAds').isChecked(), false);
+    assert.equal(await popup.locator('#hideAds').isChecked(), true);
     assert.equal(await popup.locator('#showTrollface').isChecked(), true);
+    await popup.locator('#hideAds').uncheck();
     await popup.locator('#showTrollface').check();
     await hiddenFeed(page,true);
     pass('popup enables trollface live; bundled image loads under page CSP');

@@ -28,7 +28,7 @@
   const AD_WORDS = /\b(?:promoted|sponsored|advertisement|gesponsert|sponsorisé|sponsorisée|sponsorizzato|patrocinado|patrocinada|gesponsord|sponsorowane|promowane|sponsrad|sponsoreret|sponset|mainostettu)\b|реклам|продвига|спонсор|赞助|推廣|推介|広告|プロモーション|스폰서|홍보|إعلان|ممول/iu;
   // Unknown headers remain visible to avoid hiding unrecognized ads.
   const AGE = /^\s*\d+\s*(?:s|m|h|d|w|mo|yr|sec|seconds?|min|minutes?|hr|hours?|day|days|week|weeks|month|months|year|years|ч|мин|сек|д|дн|нед|мес|г|года|лет|hace|Std|Wo|Tg|j|sem|ans?)(?=\s|[.•·]|$)/iu;
-  let settings = { enabled: true, hideAds: false, showTrollface: true };
+  let settings = { enabled: true, hideAds: true, showTrollface: true };
   let ready = false;
   let active = false;
   let host = null;
@@ -184,14 +184,14 @@
     requestAnimationFrame(() => { pending = false; sync(); });
   }
   chrome.storage.local.get(settings).then((values) => {
-    settings = { enabled: values.enabled !== false, hideAds: values.hideAds === true, showTrollface: values.showTrollface !== false };
+    settings = { enabled: values.enabled !== false, hideAds: values.hideAds !== false, showTrollface: values.showTrollface !== false };
     ready = true;
     sync();
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.enabled) settings.enabled = changes.enabled.newValue !== false;
-    if (changes.hideAds) settings.hideAds = changes.hideAds.newValue === true;
+    if (changes.hideAds) settings.hideAds = changes.hideAds.newValue !== false;
     if (changes.showTrollface) settings.showTrollface = changes.showTrollface.newValue !== false;
     sync();
   });
