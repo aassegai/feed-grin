@@ -1,0 +1,11 @@
+html[data-feed-grin-active] [data-feed-grin-hidden] {
+  display: none !important;
+}
+html[data-feed-grin-active] #feed-grin-replacement {
+  all: initial !important;
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+  margin-bottom: 16px !important;
+  box-sizing: border-box !important;
+}

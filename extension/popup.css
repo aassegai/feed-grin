@@ -1,0 +1,9 @@
+:root { color-scheme: light dark; font: 14px/1.5 system-ui, sans-serif; }
+body { width: 310px; box-sizing: border-box; margin: 0; padding: 22px; }
+h1 { margin: 0; font-size: 23px; letter-spacing: -0.5px; }
+.intro { margin: 4px 0 22px; opacity: .7; }
+label { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; cursor: pointer; border-top: 1px solid #8884; }
+label:has(input:disabled) { opacity: .55; cursor: default; }
+input { flex-shrink: 0; width: 19px; height: 19px; accent-color: #327c50; cursor: inherit; }
+.note { font-size: 12px; opacity: .7; margin-top: 20px; }
+#status { font-size: 12px; min-height: 18px; margin-bottom: 0; }

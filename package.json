@@ -1,0 +1,12 @@
+{
+  "name": "feed-grin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Development checks only; the extension has no dependencies.",
+  "scripts": {
+    "test": "node tests/smoke.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
