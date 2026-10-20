@@ -17,7 +17,8 @@ for relative in required:
 files = list((root / 'extension').rglob('*'))
 files += [root / name for name in ('README.md', 'LEGAL.md', 'PRIVACY.md', 'ASSET-NOTICE.md', 'package.json', '.gitignore')]
 files += [file for file in (root / 'tests').rglob('*') if file.is_file()]
-files += [root / 'tools/package.py']
+files += list((root / 'tools').glob('*.py'))
+files += [root / 'safari/README.md', root / 'safari/create-xcode-project.command']
 destination = root / 'dist' / f"feed-grin-{manifest['version']}.zip"
 destination.parent.mkdir(exist_ok=True)
 with ZipFile(destination, 'w', ZIP_DEFLATED) as archive:

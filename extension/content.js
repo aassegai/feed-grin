@@ -8,7 +8,8 @@
     '[data-urn^="urn:li:activity:"]',
     '[data-id^="urn:li:activity:"]',
     '[data-view-name="feed-full-update"]',
-    'article[data-id="main-feed-card"]'
+    'article[data-id="main-feed-card"]',
+    'li.feed-item'
   ].join(",");
   const AD_MARKERS = [
     '[data-ad-id]', '[data-ad-label]', '[data-is-sponsored="true"]',
@@ -22,8 +23,8 @@
     '.feed-shared-actor__sub-description',
     '[data-view-name="feed-actor-sub-description"]'
   ].join(",");
-  const FEED = '[data-testid="mainFeed"]';
-  const PROSE = '[data-testid="expandable-text-box"], [componentkey^="feed-commentary"], .update-components-text, .feed-shared-text';
+  const FEED = '[data-testid="mainFeed"], ol.feed-container';
+  const PROSE = '[data-testid="expandable-text-box"], [componentkey^="feed-commentary"], .update-components-text, .feed-shared-text, [data-test-id="main-feed-activity-card__commentary"], [data-test-id="post-commentary"]';
   const COMMENTS = '[data-testid*="comment" i], [componentkey^="comment-"], .comments-comments-list';
   const AD_WORDS = /\b(?:promoted|sponsored|advertisement|gesponsert|sponsorisé|sponsorisée|sponsorizzato|patrocinado|patrocinada|gesponsord|sponsorowane|promowane|sponsrad|sponsoreret|sponset|mainostettu)\b|реклам|продвига|спонсор|赞助|推廣|推介|広告|プロモーション|스폰서|홍보|إعلان|ممول/iu;
   // Unknown headers remain visible to avoid hiding unrecognized ads.

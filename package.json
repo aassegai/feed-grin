@@ -1,10 +1,12 @@
 {
   "name": "feed-grin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Development checks only; the extension has no dependencies.",
   "scripts": {
-    "test": "node tests/smoke.cjs"
+    "test": "node tests/smoke.cjs",
+    "test:safari": "node tests/safari-webkit.cjs",
+    "package:safari": "python3 tools/package_safari.py"
   },
   "devDependencies": {
     "playwright": "1.63.0"

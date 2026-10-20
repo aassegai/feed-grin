@@ -4,7 +4,7 @@ An extension that hides user posts in the LinkedIn feed.
 
 ## Installation
 
-1. Extract `feed-grin-1.0.2.zip` to a permanent folder or just clone the repo locally if using github.
+1. Extract `feed-grin-1.0.3.zip` to a permanent folder or just clone the repo locally if using github.
 2. Open `chrome://extensions` in Chrome.
 3. Enable "Developer mode".
 4. Click "Load unpacked" and select the `extension` folder
@@ -20,3 +20,8 @@ To turn off post hiding, use the switch in settings. If you disable or
 remove the extension itself through `chrome://extensions`, reload the tab.
 After changing files, click the extension's Reload button and reload LinkedIn.
 
+## Safari
+
+For Safari on Mac, iPhone, and iPad, see [the Safari installation guide](safari/README.md).
+The Safari ZIP has `manifest.json` at its root. The Xcode kit includes a script
+that generates macOS and iOS app projects using Apple's tools.
