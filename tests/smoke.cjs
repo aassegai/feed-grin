@@ -65,11 +65,26 @@ async function original(page) {
       args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`,'--autoplay-policy=no-user-gesture-required'],
       viewport:{width:1280,height:900}
     });
-    await context.route(/^https:\/\/(www\.)?linkedin\.com\//,route=>route.fulfill({contentType:'text/html',body:fixture}));
+    const modernFixture = await fs.readFile(path.join(__dirname, 'fixtures/modern-feed.html'), 'utf8');
+    await context.route(/^https:\/\/(www\.)?linkedin\.com\//,route=>route.fulfill({contentType:'text/html',body:route.request().url().includes('layout=modern')?modernFixture:fixture}));
     const page=await context.newPage();
     const errors=[];
     context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
     page.on('pageerror',e=>errors.push(e.message));
+    // Regression: no main element, no Ember classes, only modern feed/list roles.
+    await page.goto('https://www.linkedin.com/feed/?layout=modern');
+    await page.waitForFunction(() => getComputedStyle(document.getElementById('modern-organic')).display === 'none', null, {timeout:5000});
+    pass('modern feed cards hidden without legacy classes or a main element');
+    for (const id of ['modern-tracking-organic','modern-ru','modern-split-time','modern-sr-time','modern-roleless']) {
+      assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
+    }
+    for (const id of ['modern-ad','modern-ad-ru','modern-metadata-ad','modern-tracking-ad','modern-unknown','modern-sidebar']) {
+      assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
+    }
+    assert.equal(await page.locator('.composer').isVisible(), true);
+    assert.equal(await page.locator(host).count(), 0);
+    pass('modern ad labels, sponsored tracking, component keys and unknown modules preserved');
+    pass('modern split, invisible and screen-reader timestamps recognized; roleless cards covered');
     await page.goto('https://www.linkedin.com/feed/?trk=test');
     await hiddenFeed(page);
     pass('default: organic posts hidden; ads, unknown cards, composer and sidebars preserved; image off');
@@ -178,6 +193,44 @@ async function original(page) {
     await popup.locator('#showTrollface').check();
     await hiddenFeed(page,true);
     pass('trollface toggle leaves feed hiding and ad visibility unchanged');
+    await page.goto('https://www.linkedin.com/feed/?layout=modern');
+    await page.waitForSelector(host, {state:'visible'});
+    await page.waitForFunction(() => {
+      const img=document.querySelector('#feed-grin-replacement')?.shadowRoot?.querySelector('img');
+      return img?.complete && img.naturalWidth===900;
+    });
+    assert.equal(await page.locator(host).count(), 1);
+    assert.equal(await page.locator('#modern-ad').isVisible(), true);
+    pass('one trollface replaces modern organic cards while ads remain visible');
+
+    await page.bringToFront();
+    await popup.evaluate(() => refreshStatus());
+    assert.match(await popup.locator('#status').textContent(), /Скрыто карточек: 6\. Реклама сохранена: 4\./);
+    pass('popup reports actual hidden and preserved ad counts from the active tab');
+
+    await page.evaluate(() => document.querySelector('#modern-organic').setAttribute('data-view-tracking-scope', JSON.stringify([{transporterKeys:['sponsored']}])));
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display!=='none');
+    await page.evaluate(() => document.querySelector('#modern-organic').removeAttribute('data-view-tracking-scope'));
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display==='none');
+    pass('late sponsored tracking restores modern cards');
+
+    await page.evaluate(() => {
+      document.querySelector('#modern-organic > p').textContent='Promoted';
+    });
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display!=='none');
+    assert.equal(await page.locator('#modern-organic').isVisible(), true);
+    assert.equal(await page.locator(host).count(), 1);
+    await page.evaluate(() => document.querySelector('#modern-organic > p').textContent='3h');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display==='none');
+    pass('virtualized modern card can change from organic to ad and back');
+
+    await popup.locator('#enabled').uncheck();
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-feed-grin-active'));
+    for (const id of ['modern-organic','modern-ad','modern-tracking-organic','modern-sidebar']) assert.equal(await page.locator(`#${id}`).isVisible(), true);
+    await popup.locator('#enabled').check();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display==='none');
+    pass('modern feed settings restore original cards and reapply hiding');
+
     const output=path.resolve(__dirname,'../test-results');
     await fs.mkdir(output,{recursive:true});
     await page.screenshot({path:path.join(output,'feed-preview.png'),fullPage:true});

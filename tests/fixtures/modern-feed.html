@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<style>
+body{margin:0;background:#f3f2ef;font:16px Arial;color:#222}nav{padding:20px;background:white}
+.layout{display:grid;grid-template-columns:200px minmax(0,560px) 250px;gap:20px;max-width:1050px;margin:24px auto}
+article,[role=listitem],aside,.composer{padding:20px;background:white;border-radius:12px;margin-bottom:16px}
+[role=listitem] [role=listitem]{border:1px solid #ccc}p{margin:8px 0}
+@media(max-width:700px){.layout{display:block;margin:12px}.sidebar{display:none}}
+</style></head><body>
+<nav>Home · Jobs · Messaging</nav><div class="layout"><section class="sidebar">Your profile</section>
+<div data-testid="mainFeed"><div class="composer"><button>Start a post</button></div><div role="list">
+<div role="listitem" id="modern-organic" class="opaque-a1">
+  <a href="/in/example/"><p>Example author</p></a><p><span>3h</span><span> · Visible to anyone</span></p>
+  <div data-testid="expandable-text-box"><p>Ordinary post</p><p>Sponsored is a word in this post.</p></div>
+  <button aria-label="Reaction button state: no reaction">Like</button>
+  <div data-testid="comments"><div role="listitem" id="nested-comment"><span>1h</span>A comment</div></div>
+</div>
+<div role="listitem" id="modern-ad"><a href="/company/example/"><p>Advertiser</p></a><p><span>Promoted</span></p>
+  <div data-testid="expandable-text-box"><p>Advertisement stays visible</p><p>3h</p></div></div>
+<div role="listitem" id="modern-metadata-ad"><div componentkey="sponsoredContentV2-campaign-1"><p>2h</p>
+  <div data-testid="expandable-text-box">Ad marked by component key</div></div></div>
+<div role="listitem" id="modern-tracking-ad"><div data-view-tracking-scope='[{"transporterKeys":["sponsored"]}]'><p>2h</p>
+  <div data-testid="expandable-text-box">Ad marked by tracking scope</div></div></div>
+<div role="listitem" id="modern-tracking-organic"><div data-view-tracking-scope='[{"transporterKeys":["default"]}]'>
+  <a href="/in/example/">Author</a><div data-testid="expandable-text-box">Post with explicit organic tracking, no timestamp</div></div></div>
+<div role="listitem" id="modern-unknown"><p>Unknown module</p></div>
+<div role="listitem" id="modern-ru"><a href="/in/example/">Автор</a><p><span>​2 ч.</span></p>
+  <div data-testid="expandable-text-box">Обычный пост</div></div>
+<div role="listitem" id="modern-split-time"><a href="/in/example/">Author</a><p aria-label="4 hours ago"><span>4</span><span>h</span></p>
+  <div data-testid="expandable-text-box">Post with split timestamp</div></div>
+<div role="listitem" id="modern-sr-time"><a href="/in/example/">Author</a><p><span aria-hidden="true">5h</span><span class="sr-only">5 hours ago</span></p>
+  <div data-testid="expandable-text-box">Timestamp has duplicate screen-reader text</div></div>
+<div role="listitem" id="modern-ad-ru"><a href="/company/example/">Компания</a><p><span>Продвигается</span></p>
+  <div data-testid="expandable-text-box">Реклама</div></div>
+<div data-lazy-mount-id="card-only" id="modern-roleless"><a href="/in/example/">Author</a><p>1 day ago</p>
+  <div data-testid="expandable-text-box">Post with no listitem role</div></div>
+</div></div><aside id="modern-sidebar"><div role="listitem"><p>1h</p><div data-testid="expandable-text-box">Sidebar recommendation</div></div></aside>
+</div><div id="message-dock">Messages</div></body></html>

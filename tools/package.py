@@ -16,7 +16,8 @@ for relative in required:
         raise SystemExit(f'Missing extension resource: {relative}')
 files = list((root / 'extension').rglob('*'))
 files += [root / name for name in ('README.md', 'LEGAL.md', 'PRIVACY.md', 'ASSET-NOTICE.md', 'package.json', '.gitignore')]
-files += [root / 'tests/smoke.cjs', root / 'tools/package.py']
+files += [file for file in (root / 'tests').rglob('*') if file.is_file()]
+files += [root / 'tools/package.py']
 destination = root / 'dist' / f"feed-grin-{manifest['version']}.zip"
 destination.parent.mkdir(exist_ok=True)
 with ZipFile(destination, 'w', ZIP_DEFLATED) as archive:
