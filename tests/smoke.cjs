@@ -33,7 +33,7 @@ ${card('body-mentions-ad','1 day ago •','My post talks about Promoted and Spon
 </main><aside class="scaffold-layout__aside">Recommendations and sidebar advertisement</aside></div>
 <div id="message-dock"><button>Open messages</button></div></body></html>`;
 
-async function hiddenFeed(page, image=false) {
+async function hiddenFeed(page, image=true) {
   await page.waitForFunction(() => getComputedStyle(document.getElementById('organic').parentElement).display === 'none');
   for (const id of ['organic','organic-ru','body-mentions-ad']) assert.equal(await page.locator(`#${id}`).isVisible(),false,id);
   for (const id of ['ad','ad-ru','ad-marker','unknown']) assert.equal(await page.locator(`#${id}`).isVisible(),true,id);
@@ -82,17 +82,19 @@ async function original(page) {
       assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
     }
     assert.equal(await page.locator('.composer').isVisible(), true);
-    assert.equal(await page.locator(host).count(), 0);
+    assert.equal(await page.locator(host).count(), 1);
     pass('modern ad labels, sponsored tracking, component keys and unknown modules preserved');
     pass('modern split, invisible and screen-reader timestamps recognized; roleless cards covered');
     await page.goto('https://www.linkedin.com/feed/?trk=test');
     await hiddenFeed(page);
-    pass('default: organic posts hidden; ads, unknown cards, composer and sidebars preserved; image off');
+    pass('default: organic posts hidden; ads, unknown cards, composer and sidebars preserved; image on by default');
 
     const popup=await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
     await popup.locator('#enabled').waitFor({state:'visible'});
     await popup.waitForFunction(()=>!document.querySelector('#enabled').disabled);
+    assert.equal(await popup.locator('#hideAds').isChecked(), false);
+    assert.equal(await popup.locator('#showTrollface').isChecked(), true);
     await popup.locator('#showTrollface').check();
     await hiddenFeed(page,true);
     pass('popup enables trollface live; bundled image loads under page CSP');
@@ -189,7 +191,10 @@ async function original(page) {
 
     await popup.locator('#showTrollface').uncheck();
     await page.waitForSelector(host,{state:'detached'});
-    await hiddenFeed(page);
+    await hiddenFeed(page,false);
+    await page.reload();
+    await hiddenFeed(page,false);
+    pass('explicit image-off setting survives reload despite the image-on default');
     await popup.locator('#showTrollface').check();
     await hiddenFeed(page,true);
     pass('trollface toggle leaves feed hiding and ad visibility unchanged');
@@ -230,6 +235,94 @@ async function original(page) {
     await popup.locator('#enabled').check();
     await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display==='none');
     pass('modern feed settings restore original cards and reapply hiding');
+
+    await popup.locator('#hideAds').check();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display==='none');
+    for (const id of ['modern-ad','modern-ad-ru','modern-metadata-ad','modern-tracking-ad','modern-organic']) assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
+    for (const id of ['modern-unknown','modern-sidebar']) assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
+    await page.bringToFront();
+    await popup.evaluate(() => refreshStatus());
+    assert.match(await popup.locator('#status').textContent(), /Скрыто карточек: 10\. Из них рекламных: 4\./);
+    pass('separate ad toggle hides recognized modern ads and updates counts');
+
+    await popup.locator('#hideAds').uncheck();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display!=='none');
+    assert.equal(await page.locator('#modern-organic').isVisible(), false);
+    pass('turning ad hiding off restores ads while organic hiding stays enabled');
+
+    await popup.locator('#hideAds').check();
+    await popup.locator('#enabled').uncheck();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display!=='none');
+    assert.equal(await page.locator('#modern-ad').isVisible(), false);
+    assert.equal(await popup.locator('#showTrollface').isEnabled(), true);
+    assert.equal(await page.locator(host).count(), 1);
+    pass('ad hiding and trollface work independently of organic post hiding');
+
+    await popup.locator('#hideAds').uncheck();
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-feed-grin-active'));
+    for (const id of ['modern-organic','modern-ad','modern-metadata-ad','modern-sidebar']) assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
+    assert.equal(await page.locator(host).count(), 0);
+    assert.equal(await popup.locator('#showTrollface').isDisabled(), true);
+    pass('both hiding toggles off restores all cards and removes the image');
+
+    await popup.locator('#hideAds').check();
+    await page.reload();
+    await popup.reload();
+    await popup.waitForFunction(() => !document.querySelector('#hideAds').disabled);
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display==='none');
+    assert.equal(await popup.locator('#enabled').isChecked(), false);
+    assert.equal(await popup.locator('#hideAds').isChecked(), true);
+    assert.equal(await popup.locator('#showTrollface').isChecked(), true);
+    assert.equal(await page.locator('#modern-organic').isVisible(), true);
+    pass('independent settings survive page and popup reloads');
+
+    await page.evaluate(() => document.querySelector('#modern-organic > p').textContent='Promoted');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display==='none');
+    await page.evaluate(() => document.querySelector('#modern-organic > p').textContent='3h');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-organic')).display!=='none');
+    pass('ad-only mode reclassifies virtualized cards and restores organic content');
+
+    const secondTab = await context.newPage();
+    await secondTab.goto('https://www.linkedin.com/feed/?layout=modern');
+    await secondTab.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display==='none');
+    await popup.locator('#hideAds').uncheck();
+    await secondTab.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display!=='none');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display!=='none');
+    await popup.locator('#hideAds').check();
+    await secondTab.waitForFunction(() => getComputedStyle(document.querySelector('#modern-ad')).display==='none');
+    await secondTab.close();
+    pass('ad toggle applies live to multiple LinkedIn tabs');
+
+    await page.goto('https://www.linkedin.com/feed/');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#ad').parentElement).display==='none');
+    for (const id of ['ad','ad-ru','ad-marker']) assert.equal(await page.locator(`#${id}`).isVisible(), false, id);
+    for (const id of ['organic','organic-ru','unknown']) assert.equal(await page.locator(`#${id}`).isVisible(), true, id);
+    pass('ad-only mode supports legacy feed cards');
+
+    const adPaused = await page.evaluate(async src => {
+      const audio=document.createElement('audio');
+      audio.src=src;
+      document.getElementById('ad').append(audio);
+      await audio.play().catch(()=>{});
+      const paused=audio.paused;
+      audio.pause();
+      return paused;
+    }, 'data:audio/wav;base64,'+wave.toString('base64'));
+    assert.equal(adPaused, true);
+    pass('hidden ad media playback is stopped');
+
+    await popup.locator('#enabled').check();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#organic').parentElement).display==='none');
+    assert.equal(await page.locator('#ad').isVisible(), false);
+    assert.equal(await page.locator('#unknown').isVisible(), true);
+    pass('both hiding toggles work together on legacy cards');
+
+    await page.goto('https://www.linkedin.com/jobs/');
+    await original(page);
+    await popup.locator('#hideAds').uncheck();
+    await page.goto('https://www.linkedin.com/feed/');
+    await hiddenFeed(page,true);
+    pass('ad hiding stays limited to feed routes and can be disabled live');
 
     const output=path.resolve(__dirname,'../test-results');
     await fs.mkdir(output,{recursive:true});

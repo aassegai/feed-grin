@@ -28,13 +28,13 @@
   const AD_WORDS = /\b(?:promoted|sponsored|advertisement|gesponsert|sponsorisé|sponsorisée|sponsorizzato|patrocinado|patrocinada|gesponsord|sponsorowane|promowane|sponsrad|sponsoreret|sponset|mainostettu)\b|реклам|продвига|спонсор|赞助|推廣|推介|広告|プロモーション|스폰서|홍보|إعلان|ممول/iu;
   // Unknown headers remain visible to avoid hiding unrecognized ads.
   const AGE = /^\s*\d+\s*(?:s|m|h|d|w|mo|yr|sec|seconds?|min|minutes?|hr|hours?|day|days|week|weeks|month|months|year|years|ч|мин|сек|д|дн|нед|мес|г|года|лет|hace|Std|Wo|Tg|j|sem|ans?)(?=\s|[.•·]|$)/iu;
-  let settings = { enabled: true, showTrollface: false };
+  let settings = { enabled: true, hideAds: false, showTrollface: true };
   let ready = false;
   let active = false;
   let host = null;
   let pending = false;
   const hidden = new Set();
-  let stats = { feedFound: false, cards: 0, ads: 0, unknown: 0, hidden: 0 };
+  let stats = { feedFound: false, cards: 0, ads: 0, adsHidden: 0, unknown: 0, hidden: 0 };
 
   function isFeed(url) {
     const pathname = new URL(url, location.href).pathname;
@@ -43,12 +43,12 @@
   function restore() {
     for (const element of hidden) element.removeAttribute(HIDDEN);
     hidden.clear();
-    stats = { feedFound: false, cards: 0, ads: 0, unknown: 0, hidden: 0 };
+    stats = { feedFound: false, cards: 0, ads: 0, adsHidden: 0, unknown: 0, hidden: 0 };
     host?.remove();
     host = null;
   }
   function setRoute(url = location.href) {
-    active = ready && settings.enabled && isFeed(url);
+    active = ready && (settings.enabled || settings.hideAds) && isFeed(url);
     document.documentElement.toggleAttribute(ACTIVE, active);
     if (!active) restore();
   }
@@ -150,12 +150,17 @@
     const main = document.querySelector(FEED) || document.querySelector("main") || document.querySelector('[role="main"]') || document.querySelector(".scaffold-layout__main");
     if (!main) { restore(); return; }
     const cards = findCards(main);
-    stats = { feedFound: true, cards: cards.length, ads: 0, unknown: 0, hidden: 0 };
+    stats = { feedFound: true, cards: cards.length, ads: 0, adsHidden: 0, unknown: 0, hidden: 0 };
     const nextHidden = new Set();
     for (const card of cards) {
       const type = classify(card);
-      if (type === "ad") { stats.ads++; continue; }
-      if (type !== "organic") { stats.unknown++; continue; }
+      if (type === "ad") {
+        stats.ads++;
+        if (!settings.hideAds) continue;
+        stats.adsHidden++;
+      } else if (type === "organic") {
+        if (!settings.enabled) continue;
+      } else { stats.unknown++; continue; }
       stats.hidden++;
       nextHidden.add(card);
       card.setAttribute(HIDDEN, "");
@@ -179,14 +184,15 @@
     requestAnimationFrame(() => { pending = false; sync(); });
   }
   chrome.storage.local.get(settings).then((values) => {
-    settings = { enabled: values.enabled !== false, showTrollface: values.showTrollface === true };
+    settings = { enabled: values.enabled !== false, hideAds: values.hideAds === true, showTrollface: values.showTrollface !== false };
     ready = true;
     sync();
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.enabled) settings.enabled = changes.enabled.newValue !== false;
-    if (changes.showTrollface) settings.showTrollface = changes.showTrollface.newValue === true;
+    if (changes.hideAds) settings.hideAds = changes.hideAds.newValue === true;
+    if (changes.showTrollface) settings.showTrollface = changes.showTrollface.newValue !== false;
     sync();
   });
   new MutationObserver(() => { setRoute(); schedule(); }).observe(document.documentElement, {
@@ -196,7 +202,7 @@
   chrome.runtime.onMessage.addListener((message, _sender, respond) => {
     if (message?.type !== "feed-grin-status") return;
     sync();
-    respond({ version: chrome.runtime.getManifest().version, enabled: settings.enabled, onFeed: isFeed(location.href), ...stats });
+    respond({ version: chrome.runtime.getManifest().version, enabled: settings.enabled, hideAds: settings.hideAds, onFeed: isFeed(location.href), ...stats });
   });
   window.navigation?.addEventListener("navigate", (event) => {
     setRoute(event.destination.url);

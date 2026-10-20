@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Feed Grin",
-  "version": "1.0.1",
-  "description": "Скрывает обычные посты ленты LinkedIn, сохраняя рекламу. Троллфейс включается отдельно.",
+  "version": "1.0.2",
+  "description": "Скрывает выбранные посты ленты LinkedIn. Троллфейс включается отдельно.",
   "content_scripts": [
     {
       "matches": [
